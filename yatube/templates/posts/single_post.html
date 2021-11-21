@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}
+<title>{{ title }}</title>
+{% endblock %}
+{% block content %}
+<main>
+  <div class="container py-5">
+    <h1>{{ title }}</h1>
+    <article>
+      <ul>
+        <li>
+          {{ author }}
+        </li>
+        <li>
+          Дата публикации: {{ pub_date }}
+        </li>
+        <li>
+          Тематика: {{ group }}
+        </li>
+      </ul>
+      <p>
+        {{ text }}
+      </p>
+      <a href="{% url 'posts:group_post' %}">все записи группы</a>
+    </article>
+  </div>
+</main>
+{% endblock %}
