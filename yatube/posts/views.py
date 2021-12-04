@@ -53,17 +53,16 @@ def groups(request):
 
 
 # Страница профиля
-@login_required
 def profile(request, username):
     template = 'posts/profile.html'
-    user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author_id=user.id)
+    author = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(author_id=author.id)
     quantity = posts.count()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'user': user,
+        'author': author,
         'quantity': quantity,
         'page_obj': page_obj,
     }
