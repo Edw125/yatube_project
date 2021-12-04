@@ -53,6 +53,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.year.year',
             ],
         },
     },
@@ -108,11 +109,7 @@ STATIC_URL = '/static/'
 
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'posts:index'
-# LOGOUT_REDIRECT_URL = 'posts:index'
+# LOGOUT_REDIRECT_URL = 'users:logout'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_HOST_USER = 'kt215m@gmail.com'
-# EMAIL_HOST_PASSWORD ='xxxxx'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')

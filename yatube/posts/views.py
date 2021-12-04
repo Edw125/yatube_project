@@ -1,18 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import render, get_object_or_404
-from django.shortcuts import redirect
+from django.shortcuts import render, get_object_or_404, redirect
 
-from .models import Post, Group
-
-
-def authorized_only(func):
-    def check_user(request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return func(request, *args, **kwargs)
-        return redirect('/auth/login/')
-
-    return check_user
+from .forms import PostForm
+from .models import Post, Group, User
 
 
 # Главная страница
@@ -20,7 +11,6 @@ def index(request):
     template = 'posts/index.html'
     title = "Последние обновления на сайте"
     text = 'Добро пожаловать в Yatube! Говорим обо всем на свете'
-    # posts = Post.objects.order_by('-pub_date')[:10]
     posts = Post.objects.all()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
@@ -34,21 +24,21 @@ def index(request):
 
 
 # Страница группы с сортировкой по 10 постов
-@authorized_only
 def group_list(request, slug):
     group = get_object_or_404(Group, slug=slug)
     template = 'posts/group_list.html'
-    # posts = Post.objects.filter(group=group).order_by('-pub_date')[:10]
-    posts = group.group_name.all()[:10]
+    posts = group.group_name.all()
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     context = {
         'group': group,
-        'posts': posts,
+        'page_obj': page_obj,
     }
     return render(request, template, context)
 
 
 # Страница со списком групп
-@login_required
 def groups(request):
     template = 'posts/groups.html'
     title = 'Информация о группах проекта Yatube'
@@ -62,13 +52,83 @@ def groups(request):
     return render(request, template, context)
 
 
-# Страница выбранного поста
-# def single_post(request, group_name, number_post):
-#     template = 'posts/single_post.html'
-#     context = {
-#         'text': Post.text,
-#         'author': Post.author,
-#         'pub_date': Post.pub_date,
-#         'group': Post.group,
-#     }
-#     return render(request, template, context)
+# Страница профиля
+@login_required
+def profile(request, username):
+    template = 'posts/profile.html'
+    user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(author_id=user.id)
+    quantity = posts.count()
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'user': user,
+        'quantity': quantity,
+        'page_obj': page_obj,
+    }
+    return render(request, template, context)
+
+
+# Страница одного поста
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    user = request.user
+    quantity = post.author.posts.count()
+    context = {
+        'user': user,
+        'post': post,
+        'quantity': quantity,
+    }
+    return render(request, 'posts/post_detail.html', context)
+
+
+# Создать пост
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            form = form.save(commit=False)
+            form.author = request.user
+            form.save()
+            return redirect('posts:profile', form.author)
+        else:
+            context = {
+                'form': form,
+                'is_edit': False,
+            }
+            return render(request, 'posts/post_create.html', context)
+    form = PostForm()
+    context = {
+        'form': form,
+        'is_edit': False
+    }
+    return render(request, 'posts/post_create.html', context)
+
+
+# Редактировать пост
+@login_required
+def post_edit(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('posts:post_detail', post_id)
+        else:
+            context = {
+                'form': form,
+                'is_edit': True,
+                'post_id': post_id,
+            }
+            return render(request, 'posts/update_post.html', context)
+    form = PostForm({'text': post.text, 'group': post.group})
+    context = {
+        'form': form,
+        'is_edit': True,
+        'post_id': post_id,
+    }
+    return render(request, 'posts/update_post.html', context)
+
+
