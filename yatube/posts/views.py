@@ -9,7 +9,7 @@ from .models import Post, Group, User
 # Главная страница
 def index(request):
     template = 'posts/index.html'
-    title = "Последние обновления на сайте"
+    title = 'Последние обновления на сайте'
     text = 'Добро пожаловать в Yatube! Говорим обо всем на свете'
     posts = Post.objects.all()
     paginator = Paginator(posts, 10)
@@ -85,20 +85,12 @@ def post_detail(request, post_id):
 # Создать пост
 @login_required
 def post_create(request):
-    if request.method == 'POST':
-        form = PostForm(request.POST)
-        if form.is_valid():
-            form = form.save(commit=False)
-            form.author = request.user
-            form.save()
-            return redirect('posts:profile', form.author)
-        else:
-            context = {
-                'form': form,
-                'is_edit': False,
-            }
-            return render(request, 'posts/post_create.html', context)
-    form = PostForm()
+    form = PostForm(request.POST or None)
+    if form.is_valid():
+        form = form.save(commit=False)
+        form.author = request.user
+        form.save()
+        return redirect('posts:profile', form.author)
     context = {
         'form': form,
         'is_edit': False
@@ -110,24 +102,13 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    if request.method == 'POST':
-        form = PostForm(request.POST, instance=post)
-        if form.is_valid():
-            form.save()
-            return redirect('posts:post_detail', post_id)
-        else:
-            context = {
-                'form': form,
-                'is_edit': True,
-                'post_id': post_id,
-            }
-            return render(request, 'posts/update_post.html', context)
-    form = PostForm({'text': post.text, 'group': post.group})
+    form = PostForm(request.POST or None, instance=post)
+    if form.is_valid():
+        form.save()
+        return redirect('posts:post_detail', post_id)
     context = {
         'form': form,
         'is_edit': True,
         'post_id': post_id,
     }
     return render(request, 'posts/update_post.html', context)
-
-

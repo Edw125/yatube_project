@@ -13,7 +13,7 @@ SECRET_KEY = 'kx3-3-h-(9=&_o(vwcsrj1bke3%=2ob0$tylcfgondj-r36fy('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['testserver']
 
 # Application definition
 
