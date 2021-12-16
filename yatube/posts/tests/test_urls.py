@@ -9,21 +9,25 @@ User = get_user_model()
 
 
 class PostsURLTests(TestCase):
-    def setUp(self):
-        self.guest_client = Client()
-        self.user = User.objects.create_user(username='HasNoName')
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.group = Group.objects.create(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Edward')
+        cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='slug',
             description='Тестовое описание',
         )
-        self.post = Post.objects.create(
-            author=self.user,
-            group=self.group,
-            text='Тест',
+        cls.post = Post.objects.create(
+            author=cls.user,
+            group=cls.group,
+            text='Тестовый текст',
         )
+
+    def setUp(self):
+        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_post_url(self):
         """Страница доступна любому пользователю."""

@@ -9,20 +9,24 @@ User = get_user_model()
 
 
 class PostPagesTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='Edward')
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.group = Group.objects.create(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Edward')
+        cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='slug',
             description='Тестовое описание',
         )
-        self.post = Post.objects.create(
-            author=self.user,
-            group=self.group,
-            text='Тест',
+        cls.post = Post.objects.create(
+            author=cls.user,
+            group=cls.group,
+            text='Тестовый текст',
         )
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -154,20 +158,24 @@ class PostPagesTests(TestCase):
 
 
 class PaginatorViewsTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='Edward')
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.group = Group.objects.create(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Edward')
+        cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='slug',
             description='Тестовое описание',
         )
-        self.post = Post.objects.create(
-            author=self.user,
-            group=self.group,
+        cls.post = Post.objects.create(
+            author=cls.user,
+            group=cls.group,
             text='Тест',
         )
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_index_page_contains_records(self):
         response = self.client.get(reverse('posts:'))
