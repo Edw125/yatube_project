@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -6,13 +7,12 @@ from .forms import PostForm
 from .models import Post, Group, User
 
 
-# Главная страница
 def index(request):
     template = 'posts/index.html'
     title = 'Последние обновления на сайте'
     text = 'Добро пожаловать в Yatube! Говорим обо всем на свете'
     posts = Post.objects.all()
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -28,7 +28,7 @@ def group_list(request, slug):
     group = get_object_or_404(Group, slug=slug)
     template = 'posts/group_list.html'
     posts = group.group_name.all()
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -57,13 +57,11 @@ def profile(request, username):
     template = 'posts/profile.html'
     author = get_object_or_404(User, username=username)
     posts = Post.objects.filter(author_id=author.id)
-    quantity = posts.count()
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
         'author': author,
-        'quantity': quantity,
         'page_obj': page_obj,
     }
     return render(request, template, context)
@@ -85,7 +83,10 @@ def post_detail(request, post_id):
 # Создать пост
 @login_required
 def post_create(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None,
+    )
     if form.is_valid():
         form = form.save(commit=False)
         form.author = request.user
@@ -102,7 +103,11 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    form = PostForm(request.POST or None, instance=post)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None,
+        instance=post
+    )
     if form.is_valid():
         form.save()
         return redirect('posts:post_detail', post_id)
