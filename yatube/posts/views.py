@@ -2,11 +2,13 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
+# from django.views.decorators.cache import cache_page
 
-from .forms import PostForm
-from .models import Post, Group, User
+from .forms import CommentForm, PostForm
+from .models import Group, Comment, Post, User, Follow
 
 
+# Главная страница
 def index(request):
     template = 'posts/index.html'
     title = 'Последние обновления на сайте'
@@ -27,7 +29,7 @@ def index(request):
 def group_list(request, slug):
     group = get_object_or_404(Group, slug=slug)
     template = 'posts/group_list.html'
-    posts = group.group_name.all()
+    posts = group.posts.all()
     paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -57,12 +59,15 @@ def profile(request, username):
     template = 'posts/profile.html'
     author = get_object_or_404(User, username=username)
     posts = Post.objects.filter(author_id=author.id)
+    following = request.user.is_authenticated and author.following.exists()
     paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
         'author': author,
         'page_obj': page_obj,
+        'following': following,
+        'user': request.user
     }
     return render(request, template, context)
 
@@ -70,13 +75,18 @@ def profile(request, username):
 # Страница одного поста
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    user = request.user
     quantity = post.author.posts.count()
+    user = request.user
+    form = CommentForm(request.POST or None)
     context = {
         'user': user,
         'post': post,
         'quantity': quantity,
+        'form': form,
     }
+    comments = Comment.objects.filter(post_id=post_id)
+    if comments:
+        context.update({'comments': comments})
     return render(request, 'posts/post_detail.html', context)
 
 
@@ -117,3 +127,54 @@ def post_edit(request, post_id):
         'post_id': post_id,
     }
     return render(request, 'posts/update_post.html', context)
+
+
+# Оставить комментарий
+@login_required
+def add_comment(request, post_id):
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        post = Post.objects.get(pk=post_id)
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    template = 'posts/follow.html'
+    authors = Follow.objects.filter(user=request.user)
+    following_authors = User.objects.filter(following__in=authors)
+    posts = Post.objects.filter(author__in=following_authors)
+    paginator = Paginator(posts, settings.NUMBER_OF_POSTS)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, template, context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    if request.user != author:
+        Follow.objects.create(
+            user=request.user,
+            author=author
+        )
+        return redirect('posts:profile', username=username)
+    else:
+        return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    Follow.objects.filter(
+        user=request.user,
+        author=author
+    ).delete()
+    return redirect('posts:profile', username=username)

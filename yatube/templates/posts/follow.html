@@ -1,14 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}Подписки пользователя{% endblock %}
 {% block content %}
 {% include 'includes/switcher.html' %}
 {% load thumbnail %}
-{% load cache %}
-{% cache 20 sidebar %}
 <main>
   <div class="container py-5">
     <h1>
-      {{ text }}
+      Лента постов:
     </h1>
     <hr>
     {% for post in page_obj %}
@@ -38,5 +36,4 @@
     {% include 'includes/paginator.html' %}
   </div>
 </main>
-{% endcache %}
 {% endblock %}
