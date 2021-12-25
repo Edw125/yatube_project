@@ -372,6 +372,18 @@ class FollowViewsTest(TestCase):
         response = self.authorized_client.get(reverse('posts:follow_index'))
         self.assertTrue(response.context['page_obj'])
 
+    def test_authorized_user_can_follow_once(self):
+        """Подписаться на пользователя можно только один раз."""
+        first_response = self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.author}))
+        self.assertEqual(first_response.status_code, HTTPStatus.FOUND)
+        second_response = self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.author}))
+        self.assertEqual(second_response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Follow.objects.count(), 1)
+
 
 class CommentViewTest(TestCase):
     @classmethod
