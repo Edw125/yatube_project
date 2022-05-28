@@ -153,3 +153,5 @@ coverage.xml
 *.cover 
 
 media/
+dump.json
+yatube/templates
